@@ -3,6 +3,7 @@ from deep_sort_realtime.deepsort_tracker import DeepSort
 from collections import defaultdict
 import cv2
 import torch
+import numpy as np
 import os
 
 # Allowlist DetectionModel global
@@ -16,9 +17,9 @@ CLASS_NAMES = ["flowers", "green", "red", "turning red"]
 # Store unique object IDs per class
 unique_ids_per_class = defaultdict(set)
 
-def run_batch_tracker(image_paths):
+def run_batch_tracker(images):
     """
-    Process all images together and track unique tomatoes across them.
+    Process all in-memory images together and track unique tomatoes across them.
     """
     global unique_ids_per_class
     unique_ids_per_class.clear()
@@ -26,8 +27,10 @@ def run_batch_tracker(image_paths):
     # Initialize DeepSort tracker only once
     tracker = DeepSort()
 
-    for image_path in image_paths:
-        frame = cv2.imread(image_path)
+    for pil_image in images:
+        # Convert PIL Image to OpenCV BGR NumPy array
+        frame = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
         results = model(frame)
         result = results[0]
         detections = []

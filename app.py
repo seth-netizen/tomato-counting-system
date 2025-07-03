@@ -1,43 +1,40 @@
 from flask import Flask, render_template, request
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-from detection import run_batch_tracker  # NEW
-from werkzeug.utils import secure_filename
+from detection import run_batch_tracker
+from PIL import Image
+import io
 
 app = Flask(__name__)
-
-UPLOAD_FOLDER = "static/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/", methods=["GET", "POST"])
 def upload_file():
     result = None
-    image_paths = []
     detection_complete = False
 
     if request.method == "POST":
         files = request.files.getlist("images")
-        saved_files = []
+
+        # List to hold PIL Images
+        in_memory_images = []
 
         for file in files:
             if file.filename == "":
                 continue
 
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-            saved_files.append(filepath)
-            image_paths.append(filepath)
+            # Read bytes into memory
+            img_bytes = file.read()
+            # Convert to PIL Image
+            image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            in_memory_images.append(image)
 
-        # Process all files at once
-        result = run_batch_tracker(saved_files)
+        # Process all images
+        result = run_batch_tracker(in_memory_images)
         detection_complete = True
 
     return render_template(
         "index.html",
         result=result,
-        images=image_paths,
         detection_complete=detection_complete
     )
 
