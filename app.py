@@ -6,8 +6,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-# Use ephemeral /tmp directory
-UPLOAD_FOLDER = "/tmp"
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/", methods=["GET", "POST"])
@@ -33,10 +33,6 @@ def upload_file():
         # Process all files at once
         result = run_batch_tracker(saved_files)
         detection_complete = True
-
-        # Optionally delete files after processing to save space
-        for f in saved_files:
-            os.remove(f)
 
     return render_template(
         "index.html",
