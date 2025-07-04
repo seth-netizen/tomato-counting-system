@@ -46,19 +46,37 @@ def upload_file():
             file.seek(0)  # Reset pointer before reading again
             data = file.read()
             supabase_path = f"uploads/{filename}"
-            upload_res = supabase.storage.from_("uploads").upload(
-                supabase_path,
-                data,
-                {"content-type": file.content_type}
-            )
 
-            if upload_res.get("error"):
-                print("Upload error:", upload_res["error"])
-                supabase_urls.append("Error uploading")
-            else:
-                # Get public URL
+            try:
+                # Try uploading, fail if duplicate
+                upload_res = supabase.storage.from_("uploads").upload(
+                    supabase_path,
+                    data,
+                    {"content-type": file.content_type}
+                )
+
+                # This succeeded if no exception
                 public_url = supabase.storage.from_("uploads").get_public_url(supabase_path)
                 supabase_urls.append(public_url)
+
+            except Exception as e:
+                # If duplicate, you can overwrite instead
+                if "The resource already exists" in str(e):
+                    try:
+                        # Overwrite using .update()
+                        update_res = supabase.storage.from_("uploads").update(
+                            supabase_path,
+                            data,
+                            {"content-type": file.content_type}
+                        )
+                        public_url = supabase.storage.from_("uploads").get_public_url(supabase_path)
+                        supabase_urls.append(public_url)
+                    except Exception as e2:
+                        print("Update error:", e2)
+                        supabase_urls.append("Error updating file")
+                else:
+                    print("Upload error:", e)
+                    supabase_urls.append("Error uploading file")
 
         # Process all files at once
         result = run_batch_tracker(saved_files)
@@ -71,7 +89,3 @@ def upload_file():
         supabase_urls=supabase_urls,
         detection_complete=detection_complete
     )
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
