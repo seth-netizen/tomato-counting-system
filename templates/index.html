@@ -50,12 +50,24 @@
 
     <!-- Processed images -->
     {% if images %}
-      <h5>Processed Images</h5>
-      <div class="row g-3">
+      <h5>Processed Images (Local)</h5>
+      <div class="row g-3 mb-4">
         {% for image_url in images %}
           <div class="col-md-4">
             <img src="{{ image_url }}" class="img-fluid rounded" alt="Processed Image">
           </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Supabase URLs -->
+    {% if supabase_urls %}
+      <h5>Stored in Supabase</h5>
+      <div class="list-group">
+        {% for url in supabase_urls %}
+          <a href="{{ url }}" target="_blank" class="list-group-item list-group-item-action">
+            {{ url }}
+          </a>
         {% endfor %}
       </div>
     {% endif %}
